@@ -5,7 +5,7 @@ WORKDIR /app
 
 # 安装依赖
 COPY package*.json ./
-RUN npm ci --production=false
+RUN npm ci --production=false --ignore-scripts
 
 # 复制源码
 COPY . .
@@ -159,7 +159,7 @@ export class EnvironmentsController {
 
   @Get()
   async findAll(): Promise<EnvironmentItem[]> {
-    return this.environmentsService.findAll(LOCAL_USER_ID);
+    return this.environmentsService.list(LOCAL_USER_ID);
   }
 
   @Post()
@@ -214,12 +214,12 @@ export class HistoryController {
     @Query('limit') limit?: string,
   ): Promise<ListHistoryResponse> {
     const limitNum = limit ? parseInt(limit, 10) : 50;
-    return this.historyService.findAll(limitNum, LOCAL_USER_ID);
+    return this.historyService.list(LOCAL_USER_ID, limitNum);
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<HistoryItem> {
-    return this.historyService.findOne(id, LOCAL_USER_ID);
+    return this.historyService.get(id, LOCAL_USER_ID);
   }
 
   @Delete(':id')
@@ -254,7 +254,7 @@ export class ProxyController {
 
   @Post('send')
   async send(@Body() dto: ProxyRequestDto): Promise<ProxyResponse> {
-    const result = await this.proxyService.send(dto);
+    const result = await this.proxyService.sendRequest(dto);
     await this.historyService.create(
       {
         method: dto.method,
@@ -275,8 +275,8 @@ export class ProxyController {
           result.data.length > 2000
             ? result.data.slice(0, 2000) + '...'
             : result.data,
-      },
-      LOCAL_USER_ID,
+        userId: LOCAL_USER_ID,
+      }
     );
     return result;
   }
@@ -295,7 +295,7 @@ ENV NODE_ENV=production
 
 # 只复制生产依赖
 COPY package*.json ./
-RUN npm ci --production=true && npm cache clean --force
+RUN npm ci --production=true --ignore-scripts && npm cache clean --force
 
 # 复制构建产物
 COPY --from=builder /app/dist ./dist
