@@ -198,7 +198,17 @@
     "@rollup/rollup-linux-x64-gnu": "4.61.1",
     "@rollup/rollup-linux-x64-musl": "4.61.1",
     "@rollup/rollup-linux-arm64-gnu": "4.61.1",
-    "@rollup/rollup-linux-arm64-musl": "4.61.1"
+    "@rollup/rollup-linux-arm64-musl": "4.61.1",
+    "@esbuild/linux-x64": "0.27.7",
+    "@esbuild/linux-arm64": "0.27.7",
+    "@swc/core-linux-x64-gnu": "1.16.1",
+    "@swc/core-linux-x64-musl": "1.16.1",
+    "@swc/core-linux-arm64-gnu": "1.16.1",
+    "@swc/core-linux-arm64-musl": "1.16.1",
+    "@tailwindcss/oxide-linux-x64-gnu": "4.3.0",
+    "@tailwindcss/oxide-linux-x64-musl": "4.3.0",
+    "@tailwindcss/oxide-linux-arm64-gnu": "4.3.0",
+    "@tailwindcss/oxide-linux-arm64-musl": "4.3.0"
   },
   "jest": {
     "preset": "ts-jest",
