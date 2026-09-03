@@ -34,16 +34,14 @@ jobs:
       - name: Compute image tags
         id: tags
         run: |
-          echo "tags=${{ env.IMAGE_PREFIX }}/postman-server:latest" > /tmp/server_tags.txt
-          echo "tags=${{ env.IMAGE_PREFIX }}/postman-client:latest" > /tmp/client_tags.txt
-          # 如果是从版本 tag 触发（如 v1.0.0），追加版本标签
+          TAGS_SERVER="${{ env.IMAGE_PREFIX }}/postman-server:latest"
+          TAGS_CLIENT="${{ env.IMAGE_PREFIX }}/postman-client:latest"
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            VERSION="${GITHUB_REF_NAME}"
-            echo "  ${{ env.IMAGE_PREFIX }}/postman-server:${VERSION}" >> /tmp/server_tags.txt
-            echo "  ${{ env.IMAGE_PREFIX }}/postman-client:${VERSION}" >> /tmp/client_tags.txt
+            TAGS_SERVER="${TAGS_SERVER},${{ env.IMAGE_PREFIX }}/postman-server:${GITHUB_REF_NAME}"
+            TAGS_CLIENT="${TAGS_CLIENT},${{ env.IMAGE_PREFIX }}/postman-client:${GITHUB_REF_NAME}"
           fi
-          echo "server_tags=$(cat /tmp/server_tags.txt | tr '\n' ',')" >> $GITHUB_OUTPUT
-          echo "client_tags=$(cat /tmp/client_tags.txt | tr '\n' ',')" >> $GITHUB_OUTPUT
+          echo "server_tags=${TAGS_SERVER}" >> $GITHUB_OUTPUT
+          echo "client_tags=${TAGS_CLIENT}" >> $GITHUB_OUTPUT
 
       - name: Build & push server image
         uses: docker/build-push-action@v6
