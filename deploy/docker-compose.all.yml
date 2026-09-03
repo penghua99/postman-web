@@ -1,0 +1,35 @@
+# ============================================================
+# Postman 网页版（多用户版）- 单容器部署
+#
+# 三个服务（PostgreSQL / 后端 / 前端）合并为单个容器 postman，
+# 对外仅暴露一个端口，数据通过 volume 持久化。
+#
+# 启动：
+#   docker compose -f docker-compose.all.yml up -d
+# 默认访问：http://<主机IP>:8080
+# 默认管理员：admin / admin123（登录后请立即修改）
+# ============================================================
+
+version: '3.8'
+
+services:
+  postman:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.all
+    container_name: postman
+    restart: unless-stopped
+    environment:
+      # 数据库初始账号（仅首次初始化生效）
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postman}
+      # JWT 签名密钥：生产环境务必设置为强随机值
+      JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string}
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    volumes:
+      - postman_data:/var/lib/postgresql/data
+
+volumes:
+  postman_data:

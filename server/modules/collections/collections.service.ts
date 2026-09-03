@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { eq, and, inArray, asc } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DRIZZLE_DATABASE } from '@server/common/constants/db.constant';
-import { collections, requests } from '@server/database/schema';
+import { collections, requests } from '@server/database/schema.standalone';
 import type {
   CollectionTreeItem,
   CollectionItem,

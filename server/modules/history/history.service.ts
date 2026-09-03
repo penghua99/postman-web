@@ -3,7 +3,7 @@ import { Inject } from '@nestjs/common';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { eq, desc, count } from 'drizzle-orm';
 import { DRIZZLE_DATABASE } from '@server/common/constants/db.constant';
-import { history } from '@server/database/schema';
+import { history } from '@server/database/schema.standalone';
 import type { HistoryItem, HttpMethod } from '@shared/api.interface';
 import type {
   KeyValueParam,

@@ -1,0 +1,28 @@
+# ---- 依赖与构建产物（绝不能被 COPY 进构建器） ----
+node_modules
+dist
+build
+coverage
+*.tsbuildinfo
+
+# ---- VCS ----
+.git
+.gitignore
+.github
+.githooks
+
+# ---- 环境与敏感文件 ----
+.env
+.env.*
+!.env.example
+
+# ---- 本机编辑器 / 系统 ----
+.idea
+.vscode
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+
+# ---- 部署临时 / 无关目录 ----
+deploy/tmp-*

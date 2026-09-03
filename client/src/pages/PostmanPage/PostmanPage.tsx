@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, Send } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronDown, Send, Shield, LogOut } from 'lucide-react';
 import { logger } from '@lark-apaas/client-toolkit/logger';
+import { useAuth } from '@/auth/auth-context';
 import type {
   RequestItem,
   HistoryItem,
@@ -108,6 +110,8 @@ function applyEnvVariables(
 }
 
 const PostmanPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { user, isAdmin, logout } = useAuth();
   const [currentRequest, setCurrentRequest] = useState<RequestItem | null>(null);
   const [response, setResponse] = useState<ProxyResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -240,6 +244,8 @@ const PostmanPage: React.FC = () => {
           </span>
         </div>
 
+        {/* 右侧：环境选择器 + 用户区 */}
+        <div className="flex items-center gap-3">
         {/* 环境选择器 */}
         <div className="relative">
           <button
@@ -276,6 +282,40 @@ const PostmanPage: React.FC = () => {
               )}
             </div>
           )}
+        </div>
+
+          {/* 用户区 */}
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => navigate('/admin')}
+                className="flex h-8 items-center gap-1.5 rounded border border-pm-border bg-pm-bg-light px-3 text-xs text-pm-fg-secondary transition-colors hover:border-pm-border-hover hover:text-pm-fg-primary"
+              >
+                <Shield size={13} />
+                管理端
+              </button>
+            )}
+            <div className="flex h-8 items-center gap-2 rounded border border-pm-border bg-pm-bg-light px-3 text-xs text-pm-fg-secondary">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-pm-orange text-[10px] font-semibold text-white">
+                {(user?.displayName || user?.username || '?').slice(0, 1).toUpperCase()}
+              </span>
+              <span className="max-w-[120px] truncate">
+                {user?.displayName || user?.username}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                navigate('/login', { replace: true });
+              }}
+              className="flex h-8 items-center gap-1 rounded px-2 text-xs text-pm-fg-muted transition-colors hover:bg-pm-bg-light hover:text-pm-fg-primary"
+              title="退出登录"
+            >
+              <LogOut size={13} />
+            </button>
+          </div>
         </div>
       </header>
 

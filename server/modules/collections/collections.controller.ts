@@ -6,11 +6,10 @@ import {
   Delete,
   Body,
   Param,
-  Req,
-  Query,
+  UseGuards,
 } from '@nestjs/common';
-import { NeedLogin } from '@lark-apaas/fullstack-nestjs-core';
-import type { Request } from 'express';
+import { JwtAuthGuard } from '@server/common/auth/jwt-auth.guard';
+import { CurrentUserId } from '@server/common/auth/current-user.decorator';
 import { CollectionsService } from './collections.service';
 import type {
   CollectionTreeItem,
@@ -18,62 +17,56 @@ import type {
   UpdateCollectionDto,
   ExportCollectionResponse,
   ImportCollectionDto,
-  RequestItem,
-  CreateRequestDto,
-  UpdateRequestDto,
 } from '@shared/api.interface';
 
 @Controller('api/collections')
-@NeedLogin()
+@UseGuards(JwtAuthGuard)
 export class CollectionsController {
   constructor(private readonly collectionsService: CollectionsService) {}
 
   @Get('tree')
-  async getTree(@Req() req: Request): Promise<CollectionTreeItem[]> {
-    const { userId } = req.userContext;
+  async getTree(@CurrentUserId() userId: string): Promise<CollectionTreeItem[]> {
     return this.collectionsService.getTree(userId);
   }
 
   @Post()
   async create(
-    @Req() req: Request,
+    @CurrentUserId() userId: string,
     @Body() dto: CreateCollectionDto,
   ): Promise<CollectionTreeItem> {
-    const { userId } = req.userContext;
     return this.collectionsService.create(dto, userId);
   }
 
   @Patch(':id')
   async update(
-    @Req() req: Request,
+    @CurrentUserId() userId: string,
     @Param('id') id: string,
     @Body() dto: UpdateCollectionDto,
   ): Promise<CollectionTreeItem> {
-    const { userId } = req.userContext;
     return this.collectionsService.update(id, dto, userId);
   }
 
   @Delete(':id')
-  async remove(@Req() req: Request, @Param('id') id: string): Promise<void> {
-    const { userId } = req.userContext;
+  async remove(
+    @CurrentUserId() userId: string,
+    @Param('id') id: string,
+  ): Promise<void> {
     await this.collectionsService.remove(id, userId);
   }
 
   @Get(':id/export')
   async exportCollection(
-    @Req() req: Request,
+    @CurrentUserId() userId: string,
     @Param('id') id: string,
   ): Promise<ExportCollectionResponse> {
-    const { userId } = req.userContext;
     return this.collectionsService.exportCollection(id, userId);
   }
 
   @Post('import')
   async importCollection(
-    @Req() req: Request,
+    @CurrentUserId() userId: string,
     @Body() dto: ImportCollectionDto,
   ): Promise<CollectionTreeItem> {
-    const { userId } = req.userContext;
     return this.collectionsService.importCollection(dto, userId);
   }
 }

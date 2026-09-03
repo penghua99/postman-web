@@ -1,20 +1,23 @@
-import { Body, Controller, Post, Req, Inject } from '@nestjs/common';
-import { NeedLogin } from '@lark-apaas/fullstack-nestjs-core';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '@server/common/auth/jwt-auth.guard';
+import { CurrentUserId } from '@server/common/auth/current-user.decorator';
 import { ProxyService } from './proxy.service';
 import { HistoryService } from '../history/history.service';
 import type { ProxyRequestDto, ProxyResponse } from '@shared/api.interface';
 
 @Controller('api/proxy')
+@UseGuards(JwtAuthGuard)
 export class ProxyController {
   constructor(
     private readonly proxyService: ProxyService,
     private readonly historyService: HistoryService,
   ) {}
 
-  @NeedLogin()
   @Post('send')
-  async send(@Req() req: Request, @Body() dto: ProxyRequestDto): Promise<ProxyResponse> {
-    const { userId } = (req as unknown as { userContext: { userId: string } }).userContext;
+  async send(
+    @CurrentUserId() userId: string,
+    @Body() dto: ProxyRequestDto,
+  ): Promise<ProxyResponse> {
     const response = await this.proxyService.sendRequest(dto);
 
     try {

@@ -74,14 +74,14 @@ export class ProxyService {
   ): string {
     const urlObj = new URL(baseUrl);
 
-    for (const param of params) {
+    for (const param of params || []) {
       if (param.enabled && param.key) {
         urlObj.searchParams.append(param.key, param.value);
       }
     }
 
-    if (dto.authType === 'apikey' && dto.auth.apiKeyIn === 'query' && dto.auth.apiKeyName) {
-      urlObj.searchParams.append(dto.auth.apiKeyName, dto.auth.apiKey || '');
+    if (dto.authType === 'apikey' && dto.auth?.apiKeyIn === 'query' && dto.auth?.apiKeyName) {
+      urlObj.searchParams.append(dto.auth!.apiKeyName, dto.auth!.apiKey || '');
     }
 
     return urlObj.toString();
@@ -90,22 +90,22 @@ export class ProxyService {
   private buildHeaders(headers: KeyValueParam[], dto: ProxyRequestDto): Record<string, string> {
     const result: Record<string, string> = {};
 
-    for (const header of headers) {
+    for (const header of headers || []) {
       if (header.enabled && header.key) {
         result[header.key] = header.value;
       }
     }
 
-    if (dto.authType === 'bearer' && dto.auth.bearerToken) {
-      result['Authorization'] = `Bearer ${dto.auth.bearerToken}`;
-    } else if (dto.authType === 'basic' && dto.auth.username) {
-      const token = Buffer.from(`${dto.auth.username}:${dto.auth.password || ''}`).toString('base64');
+    if (dto.authType === 'bearer' && dto.auth?.bearerToken) {
+      result['Authorization'] = `Bearer ${dto.auth!.bearerToken}`;
+    } else if (dto.authType === 'basic' && dto.auth?.username) {
+      const token = Buffer.from(`${dto.auth!.username}:${dto.auth!.password || ''}`).toString('base64');
       result['Authorization'] = `Basic ${token}`;
-    } else if (dto.authType === 'apikey' && dto.auth.apiKeyIn !== 'query' && dto.auth.apiKeyName) {
-      result[dto.auth.apiKeyName] = dto.auth.apiKey || '';
+    } else if (dto.authType === 'apikey' && dto.auth?.apiKeyIn !== 'query' && dto.auth?.apiKeyName) {
+      result[dto.auth!.apiKeyName] = dto.auth!.apiKey || '';
     }
 
-    const body = dto.body;
+    const body = dto.body || ({ mode: 'none' } as ProxyRequestDto['body']);
     const hasContentType = Object.keys(result).some(
       (k) => k.toLowerCase() === 'content-type',
     );
@@ -124,7 +124,7 @@ export class ProxyService {
   }
 
   private buildBody(body: ProxyRequestDto['body']): { data: unknown } {
-    if (body.mode === 'none') {
+    if (!body || body.mode === 'none') {
       return { data: undefined };
     }
 

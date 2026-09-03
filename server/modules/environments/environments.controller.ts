@@ -6,10 +6,10 @@ import {
   Delete,
   Body,
   Param,
-  Req,
+  UseGuards,
 } from '@nestjs/common';
-import { NeedLogin } from '@lark-apaas/fullstack-nestjs-core';
-import type { Request } from 'express';
+import { JwtAuthGuard } from '@server/common/auth/jwt-auth.guard';
+import { CurrentUserId } from '@server/common/auth/current-user.decorator';
 import { EnvironmentsService } from './environments.service';
 import type {
   EnvironmentItem,
@@ -18,47 +18,45 @@ import type {
 } from '@shared/api.interface';
 
 @Controller('api/environments')
-@NeedLogin()
+@UseGuards(JwtAuthGuard)
 export class EnvironmentsController {
   constructor(private readonly environmentsService: EnvironmentsService) {}
 
   @Get()
-  async list(@Req() req: Request): Promise<EnvironmentItem[]> {
-    const { userId } = req.userContext;
+  async list(@CurrentUserId() userId: string): Promise<EnvironmentItem[]> {
     return this.environmentsService.list(userId);
   }
 
   @Post()
   async create(
-    @Req() req: Request,
+    @CurrentUserId() userId: string,
     @Body() dto: CreateEnvironmentDto,
   ): Promise<EnvironmentItem> {
-    const { userId } = req.userContext;
     return this.environmentsService.create(dto, userId);
   }
 
   @Patch(':id')
   async update(
-    @Req() req: Request,
+    @CurrentUserId() userId: string,
     @Param('id') id: string,
     @Body() dto: UpdateEnvironmentDto,
   ): Promise<EnvironmentItem> {
-    const { userId } = req.userContext;
     return this.environmentsService.update(id, dto, userId);
   }
 
   @Delete(':id')
-  async remove(@Req() req: Request, @Param('id') id: string): Promise<void> {
-    const { userId } = req.userContext;
+  async remove(
+    @CurrentUserId() userId: string,
+    @Param('id') id: string,
+  ): Promise<void> {
     await this.environmentsService.remove(id, userId);
   }
 
   @Post(':id/activate')
   async activate(
-    @Req() req: Request,
+    @CurrentUserId() userId: string,
     @Param('id') id: string,
   ): Promise<EnvironmentItem> {
-    const { userId } = req.userContext;
     return this.environmentsService.setActive(id, userId);
   }
 }

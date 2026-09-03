@@ -1,3 +1,11 @@
+# ============================================================
+# Postman 网页版（多用户版）- 前端镜像（3 容器模式的 client 端）
+#
+# 注意：推荐使用单容器方案 deploy/Dockerfile.all（postgres+node+nginx）。
+# 本文件保留用于 3 容器传统部署，源码已为多用户 standalone 版，
+# 直接构建即可，无需任何构建期覆盖。
+# ============================================================
+
 # ========== 构建阶段 ==========
 FROM node:22-alpine AS builder
 
@@ -10,137 +18,10 @@ RUN npm config set fetch-retries 5 --location=global && npm ci --production=fals
 # 复制源码
 COPY . .
 
-# ── 平台无关化改造 ──────────────────────────────────────────────
-# 1. 替换入口 HTML
+# 前端入口切换为 standalone 版本
 RUN cp client/index.standalone.html client/index.html
 
-# 2. 替换 logger 为 console 实现
-RUN cat > client/src/utils/logger.ts << 'EOF'
-export const logger = {
-  info: (message: string, ...args: unknown[]) => console.log(`[INFO] ${message}`, ...args),
-  warn: (message: string, ...args: unknown[]) => console.warn(`[WARN] ${message}`, ...args),
-  error: (message: string, ...args: unknown[]) => console.error(`[ERROR] ${message}`, ...args),
-  debug: (message: string, ...args: unknown[]) => console.debug(`[DEBUG] ${message}`, ...args),
-};
-EOF
-
-# 3. 替换 showConfirm 为 window.confirm 实现
-RUN cat > client/src/utils/confirm.ts << 'EOF'
-export interface ConfirmOptions {
-  title: string;
-  content?: string;
-  confirmText?: string;
-  cancelText?: string;
-  type?: 'default' | 'danger';
-}
-
-export async function showConfirm(options: ConfirmOptions | string): Promise<boolean> {
-  const message = typeof options === 'string'
-    ? options
-    : options.content
-      ? `${options.title}\n\n${options.content}`
-      : options.title;
-  return window.confirm(message);
-}
-EOF
-
-# 4. 替换 API 客户端为原生 axios（替换 import 和实现）
-RUN cat > client/src/api/index.ts << 'EOF'
-import axios from 'axios';
-import { logger } from '@/utils/logger';
-
-import type {
-  ProxyRequestDto,
-  ProxyResponse,
-  CollectionTreeItem,
-  RequestItem,
-  EnvironmentItem,
-  HistoryItem,
-  CreateCollectionDto,
-  UpdateCollectionDto,
-  CreateRequestDto,
-  UpdateRequestDto,
-  CreateEnvironmentDto,
-  UpdateEnvironmentDto,
-  ListHistoryResponse,
-  ExportCollectionResponse,
-  ImportCollectionDto,
-} from '@shared/api.interface';
-
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/',
-  timeout: 30000,
-});
-
-async function request<T>(url: string, method: string, data?: unknown): Promise<T> {
-  try {
-    const response = await apiClient({ url, method, data });
-    return response.data as T;
-  } catch (error) {
-    logger.error(`API request failed: ${method} ${url}`, error);
-    throw error;
-  }
-}
-
-export const proxyApi = {
-  send: (dto: ProxyRequestDto): Promise<ProxyResponse> =>
-    request<ProxyResponse>('/api/proxy/send', 'POST', dto),
-};
-
-export const collectionsApi = {
-  list: (): Promise<CollectionTreeItem[]> =>
-    request<CollectionTreeItem[]>('/api/collections/tree', 'GET'),
-  create: (dto: CreateCollectionDto): Promise<CollectionTreeItem> =>
-    request<CollectionTreeItem>('/api/collections', 'POST', dto),
-  update: (id: string, dto: UpdateCollectionDto): Promise<CollectionTreeItem> =>
-    request<CollectionTreeItem>(`/api/collections/${id}`, 'PATCH', dto),
-  remove: (id: string): Promise<void> =>
-    request<void>(`/api/collections/${id}`, 'DELETE'),
-  exportCollection: (id: string): Promise<ExportCollectionResponse> =>
-    request<ExportCollectionResponse>(`/api/collections/${id}/export`, 'GET'),
-  importCollection: (dto: ImportCollectionDto): Promise<CollectionTreeItem> =>
-    request<CollectionTreeItem>('/api/collections/import', 'POST', dto),
-};
-
-export const requestsApi = {
-  listByCollection: (collectionId: string): Promise<RequestItem[]> =>
-    request<RequestItem[]>(`/api/requests?collectionId=${collectionId}`, 'GET'),
-  get: (id: string): Promise<RequestItem> =>
-    request<RequestItem>(`/api/requests/${id}`, 'GET'),
-  create: (dto: CreateRequestDto): Promise<RequestItem> =>
-    request<RequestItem>('/api/requests', 'POST', dto),
-  update: (id: string, dto: UpdateRequestDto): Promise<RequestItem> =>
-    request<RequestItem>(`/api/requests/${id}`, 'PATCH', dto),
-  remove: (id: string): Promise<void> =>
-    request<void>(`/api/requests/${id}`, 'DELETE'),
-};
-
-export const environmentsApi = {
-  list: (): Promise<EnvironmentItem[]> =>
-    request<EnvironmentItem[]>('/api/environments', 'GET'),
-  create: (dto: CreateEnvironmentDto): Promise<EnvironmentItem> =>
-    request<EnvironmentItem>('/api/environments', 'POST', dto),
-  update: (id: string, dto: UpdateEnvironmentDto): Promise<EnvironmentItem> =>
-    request<EnvironmentItem>(`/api/environments/${id}`, 'PATCH', dto),
-  remove: (id: string): Promise<void> =>
-    request<void>(`/api/environments/${id}`, 'DELETE'),
-  setActive: (id: string): Promise<EnvironmentItem> =>
-    request<EnvironmentItem>(`/api/environments/${id}/activate`, 'POST', {}),
-};
-
-export const historyApi = {
-  list: (limit = 50): Promise<ListHistoryResponse> =>
-    request<ListHistoryResponse>(`/api/history?limit=${limit}`, 'GET'),
-  get: (id: string): Promise<HistoryItem> =>
-    request<HistoryItem>(`/api/history/${id}`, 'GET'),
-  remove: (id: string): Promise<void> =>
-    request<void>(`/api/history/${id}`, 'DELETE'),
-  clear: (): Promise<void> =>
-    request<void>('/api/history/clear', 'DELETE'),
-};
-EOF
-
-# 构建前端
+# 构建前端（standalone 多用户版）
 RUN npx vite build --config vite.config.standalone.ts --mode production
 
 # ========== 运行阶段 ==========
@@ -149,7 +30,7 @@ FROM nginx:alpine AS runner
 # 复制构建产物
 COPY --from=builder /app/dist/client /usr/share/nginx/html
 
-# 复制 nginx 配置
+# 复制 nginx 配置（反代 /api -> 127.0.0.1:3000，3 容器模式请改回 server:3000）
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

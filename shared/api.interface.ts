@@ -211,3 +211,68 @@ export interface ImportCollectionDto {
     folderPath?: string[];
   }>;
 }
+
+// ============================================================
+// 多用户 / RBAC 共享类型
+// ============================================================
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  displayName: string | null;
+  email: string | null;
+  avatar: string | null;
+  status: 'active' | 'disabled';
+  isSuperAdmin: boolean;
+  roles: string[];
+  permissions: string[];
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  username: string;
+  password: string;
+  displayName?: string;
+  email?: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: AuthUser;
+}
+
+export interface AdminUserItem {
+  id: string;
+  username: string;
+  displayName: string | null;
+  email: string | null;
+  avatar: string | null;
+  status: 'active' | 'disabled';
+  isSuperAdmin: boolean;
+  createdAt: string;
+  updatedAt: string;
+  roles: { id: string; name: string; code: string }[];
+}
+
+export interface AdminRoleItem {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  isBuiltin: boolean;
+  createdAt: string;
+  permissionIds: string[];
+}
+
+export interface AdminPermissionItem {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  group: string | null;
+  createdAt: string;
+}
