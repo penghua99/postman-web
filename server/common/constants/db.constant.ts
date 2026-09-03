@@ -1,0 +1,1 @@
+export const DRIZZLE_DATABASE = 'DRIZZLE_DATABASE';
